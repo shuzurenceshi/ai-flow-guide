@@ -1,0 +1,12 @@
+{
+  "name": "ai-flow-guide",
+  "version": "1.0.0",
+  "description": "AI流程指南 - 帮普通人把问题转化为AI解决方案",
+  "scripts": {
+    "dev": "npx live-server public --port=3000",
+    "build": "echo 'Static site, no build needed'"
+  },
+  "keywords": ["ai", "workflow", "guide"],
+  "author": "shuzurenceshi",
+  "license": "MIT"
+}

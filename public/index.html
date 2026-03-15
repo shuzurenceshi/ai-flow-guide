@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI流程指南 - 让AI为你工作</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            resize: vertical;
+            min-height: 120px;
+            transition: border-color 0.3s;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            display: none;
+        }
+        .result.show {
+            display: block;
+        }
+        .result h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .result-section {
+            margin-bottom: 15px;
+        }
+        .result-section h4 {
+            color: #667eea;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        .result-section p, .result-section li {
+            color: #555;
+            line-height: 1.6;
+        }
+        .result-section ul {
+            padding-left: 20px;
+        }
+        .example-prompts {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            font-family: monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            color: #333;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            display: none;
+        }
+        .loading.show {
+            display: block;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #999;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 AI流程指南</h1>
+        <p class="subtitle">描述你的问题，我帮你找到AI解决方案</p>
+        
+        <div class="input-group">
+            <label for="problem">你想用AI解决什么问题？</label>
+            <textarea id="problem" placeholder="例如：我有1000封邮件想筛选出重要的..."></textarea>
+        </div>
+        
+        <button class="btn" onclick="generateSolution()">生成解决方案</button>
+        
+        <div class="loading" id="loading">
+            正在分析你的问题，生成最佳方案...
+        </div>
+        
+        <div class="result" id="result">
+            <h3>✅ 推荐方案</h3>
+            
+            <div class="result-section">
+                <h4>📌 适合的AI工具</h4>
+                <ul id="tools"></ul>
+            </div>
+            
+            <div class="result-section">
+                <h4>📝 操作步骤</h4>
+                <ol id="steps"></ol>
+            </div>
+            
+            <div class="result-section">
+                <h4>💡 示例提示词</h4>
+                <div class="example-prompts" id="prompts"></div>
+            </div>
+            
+            <div class="result-section">
+                <h4>⚠️ 注意事项</h4>
+                <ul id="tips"></ul>
+            </div>
+        </div>
+        
+        <div class="footer">
+            Made with ❤️ | AI流程指南 v1.0
+        </div>
+    </div>
+
+    <script>
+        // 预设模板库
+        const templates = {
+            email: {
+                keywords: ['邮件', 'email', '筛选', '回复', '整理邮件'],
+                tools: ['ChatGPT / Claude（文本分析）', '飞书 / 钉钉（企业邮件管理）'],
+                steps: [
+                    '导出需要处理的邮件内容（可导出为文本或Excel）',
+                    '在ChatGPT中输入提示词，描述你的筛选标准',
+                    'AI会帮你分析并标记重要邮件',
+                    '根据AI建议进行后续处理'
+                ],
+                prompt: '请帮我分析以下邮件内容，按重要性分类：\n- 非常重要：需要立即回复\n- 一般重要：本周内处理\n- 可忽略：通知类/订阅类\n\n邮件内容：\n[粘贴你的邮件]',
+                tips: ['涉及敏感信息时先脱敏', '邮件量大时分批处理', '重要邮件建议人工复核']
+            },
+            report: {
+                keywords: ['周报', '日报', '月报', '总结', '写报告', '汇报'],
+                tools: ['ChatGPT / Claude（内容生成）', 'Notion AI（文档整理）'],
+                steps: [
+                    '整理本周完成的工作要点',
+                    '在ChatGPT中输入要点和报告类型',
+                    'AI生成初稿后进行微调',
+                    '复制到正式文档提交'
+                ],
+                prompt: '请帮我写一份周报，要求：\n1. 简洁专业\n2. 突出重点成果\n3. 包含下周计划\n\n本周工作内容：\n1. 完成了项目A的需求分析\n2. 参加了3次会议\n3. 修复了2个bug\n\n请生成周报：',
+                tips: ['保留个人风格，不要完全依赖AI', '重要数据需要核实', '可以要求AI调整语气和格式']
+            },
+            data: {
+                keywords: ['数据', '整理', '分类', 'Excel', '表格', '分析'],
+                tools: ['ChatGPT（数据分析）', '飞书多维表格（数据管理）', 'Excel Copilot'],
+                steps: [
+                    '将数据导出为CSV或Excel格式',
+                    '描述你想要的分类/分析方式',
+                    'AI帮你生成分类规则或分析结果',
+                    '导出整理后的数据'
+                ],
+                prompt: '请帮我整理以下数据：\n1. 按类型分类\n2. 统计各类数量\n3. 找出异常数据\n\n数据内容：\n[粘贴你的数据]',
+                tips: ['数据格式要统一', '大数据量建议分批', '可以要求生成图表描述']
+            },
+            content: {
+                keywords: ['文案', '写作', '内容', '文章', '公众号', '小红书'],
+                tools: ['ChatGPT / Claude（内容创作）', 'Notion AI', 'Jasper（营销文案）'],
+                steps: [
+                    '明确你的目标受众和内容目的',
+                    '提供关键信息和风格要求',
+                    'AI生成多个版本供选择',
+                    '人工润色后发布'
+                ],
+                prompt: '请帮我写一篇小红书笔记：\n\n主题：[你的主题]\n风格：活泼/专业/搞笑\n字数：300字左右\n包含：吸引人的标题 + 正文 + 话题标签\n\n关键信息：\n[你想表达的内容]',
+                tips: ['加入个人经历更真实', '检查事实准确性', '平台敏感词要避开']
+            },
+            translate: {
+                keywords: ['翻译', '英文', '中文', '多语言', '外语'],
+                tools: ['ChatGPT / Claude（高质量翻译）', 'DeepL（专业翻译）', 'Google翻译'],
+                steps: [
+                    '复制需要翻译的文本',
+                    '指定源语言和目标语言',
+                    'AI翻译后检查准确性',
+                    '专业术语人工校对'
+                ],
+                prompt: '请将以下内容翻译成英文：\n\n要求：\n1. 保持原文语气和风格\n2. 专业术语准确\n3. 符合英语表达习惯\n\n原文：\n[粘贴内容]',
+                tips: ['专业文档建议人工校对', '可以要求不同风格（正式/口语）', '上下文很重要，提供完整段落']
+            },
+            code: {
+                keywords: ['代码', '编程', '写程序', 'bug', '开发', '脚本'],
+                tools: ['ChatGPT / Claude（代码生成）', 'GitHub Copilot（IDE辅助）', 'Cursor（AI编辑器）'],
+                steps: [
+                    '清晰描述你想要的功能',
+                    '说明使用的编程语言',
+                    'AI生成代码后测试运行',
+                    '根据报错继续优化'
+                ],
+                prompt: '请帮我写一段代码：\n\n编程语言：Python/JavaScript/其他\n功能描述：[你想实现什么]\n输入：[输入是什么]\n输出：[期望输出是什么]\n\n额外要求：\n- 代码要有注释\n- 处理异常情况',
+                tips: ['生成的代码要测试', '复杂功能分步实现', '安全敏感代码要审查']
+            }
+        };
+
+        // 默认模板
+        const defaultTemplate = {
+            tools: ['ChatGPT / Claude（通用AI助手）', '根据具体场景选择专业工具'],
+            steps: [
+                '清晰描述你的问题和期望结果',
+                '在AI工具中尝试不同的提问方式',
+                '根据AI回复调整和优化',
+                '迭代直到得到满意结果'
+            ],
+            prompt: '请帮我解决以下问题：\n\n问题描述：[详细描述你的问题]\n期望结果：[你想要什么样的结果]\n已有尝试：[如果有的话，描述你试过的方法]\n\n请给出具体的解决方案：',
+            tips: ['问题描述越详细越好', '可以追问和迭代', 'AI是助手，最终决策靠你']
+        };
+
+        function matchTemplate(problem) {
+            const lowerProblem = problem.toLowerCase();
+            for (const [key, template] of Object.entries(templates)) {
+                if (template.keywords.some(keyword => lowerProblem.includes(keyword))) {
+                    return template;
+                }
+            }
+            return defaultTemplate;
+        }
+
+        function generateSolution() {
+            const problem = document.getElementById('problem').value.trim();
+            if (!problem) {
+                alert('请先描述你的问题');
+                return;
+            }
+
+            // 显示加载状态
+            document.getElementById('loading').classList.add('show');
+            document.getElementById('result').classList.remove('show');
+
+            // 模拟API调用延迟
+            setTimeout(() => {
+                const template = matchTemplate(problem);
+                
+                // 填充结果
+                document.getElementById('tools').innerHTML = template.tools.map(t => `<li>${t}</li>`).join('');
+                document.getElementById('steps').innerHTML = template.steps.map(s => `<li>${s}</li>`).join('');
+                document.getElementById('prompts').textContent = template.prompt;
+                document.getElementById('tips').innerHTML = template.tips.map(t => `<li>${t}</li>`).join('');
+
+                // 隐藏加载，显示结果
+                document.getElementById('loading').classList.remove('show');
+                document.getElementById('result').classList.add('show');
+            }, 1500);
+        }
+    </script>
+</body>
+</html>
